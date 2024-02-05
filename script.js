@@ -1,18 +1,24 @@
-if (navigator.geolocation)
-	navigator.geolocation.getCurrentPosition(function (position) {
-		const { latitude } = position.coords;
-		const { longitude } = position.coords;
-		console.log(`https://google.com/maps/@${latitude},${longitude}`);
-		const coords = [latitude, longitude];
-		const map = L.map("map").setView(coords, 13);
+const yourPosition = async function () {
+	try {
+		const getCoords = function () {
+			return new Promise(function (resolve, reject) {
+				navigator.geolocation.getCurrentPosition(resolve, reject);
+			});
+		};
 
-		L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-			attribution:
-				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-		}).addTo(map);
-
-		L.marker(coords)
-			.addTo(map)
-			.bindPopup("A pretty CSS popup.<br> Easily customizable.")
-			.openPopup();
-	});
+		const res = await getCoords();
+		const { latitude: lat, longitude: log } = res.coords;
+		// console.log(lat, log);
+		const resGeo = await fetch(
+			`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${log}&localityLanguage=en`
+		);
+		console.log(resGeo);
+		if (!resGeo.ok)
+			throw new Error("Something happened getting location data!!");
+		const data = await resGeo.json();
+		console.log(`You are in ${data.city}, ${data.countryName}`);
+	} catch (err) {
+		console.log(`⚠️ Something went wrong 💥`);
+	}
+};
+yourPosition();
